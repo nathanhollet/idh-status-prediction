@@ -1,0 +1,138 @@
+name: idh-mutation-prediction
+# Global seed used only by one-shot scripts (e.g. embedding extraction).
+# Training scripts use cfg.training.seeds (one seed per run).
+seed: 42
+
+paths:
+  data:
+    root: data
+    UCSF-PDGM: ${paths.data.root}/UCSF-PDGM
+    UPENN-GBM: ${paths.data.root}/UPENN-GBM
+    ERASMUS-GBM: ${paths.data.root}/ERASMUS-GBM
+    UTSW-Glioma: ${paths.data.root}/UTSW-Glioma
+    UCSD-PTGBM: ${paths.data.root}/UCSD-PTGBM
+    csvs:
+      UCSF-PDGM-FLAIR: ${paths.data.root}/csvs/UCSF_IDH_labels_FLAIR.csv
+      UCSF-PDGM-T1c: ${paths.data.root}/csvs/UCSF_IDH_labels_T1c.csv
+      UCSF-PDGM-MAIN: ${paths.data.root}/csvs/UCSF_IDH_age_grade_labels.csv
+      UPENN-GBM-MAIN: ${paths.data.root}/csvs/UPENN_IDH_age_grade_labels.csv
+      UPENN-GBM-FLAIR: ${paths.data.root}/csvs/UPENN_IDH_labels_FLAIR.csv
+      UPENN-GBM-T1GD: ${paths.data.root}/csvs/UPENN_IDH_labels_T1GD.csv
+      ERASMUS-GBM-MAIN: ${paths.data.root}/csvs/ERASMUS_IDH_age_grade_labels.csv
+      ERASMUS-GBM-FLAIR: ${paths.data.root}/csvs/Erasmus_IDH_labels_FLAIR.csv
+      ERASMUS-GBM-T1GD: ${paths.data.root}/csvs/Erasmus_IDH_labels_T1GD.csv
+      UCSF-SPLITS: ${paths.data.root}/csvs/splits_UCSF
+      UPENN-SPLITS: ${paths.data.root}/csvs/splits_UPENN
+      ERASMUS-SPLITS: ${paths.data.root}/csvs/splits_Erasmus
+      # UTSW-Glioma — internal IDH cohort. Built by utsw_csv_assembly.py.
+      UTSW-Glioma-MAIN: ${paths.data.root}/csvs/UTSW_IDH_age_grade_labels.csv
+      UTSW-Glioma-FLAIR: ${paths.data.root}/csvs/UTSW_IDH_labels_FLAIR.csv
+      UTSW-Glioma-T1c: ${paths.data.root}/csvs/UTSW_IDH_labels_T1c.csv
+      UTSW-SPLITS: ${paths.data.root}/csvs/splits_UTSW
+      # UCSD-PTGBM — external IDH test cohort only (post-operative GBM,
+      # one timepoint per patient). Never trained on, so no splits key.
+      # Built by ucsd_csv_assembly.py from the TCIA metadata CSV.
+      UCSD-PTGBM-MAIN: ${paths.data.root}/csvs/UCSD_PTGBM_IDH_age_grade_labels.csv
+      UCSD-PTGBM-FLAIR: ${paths.data.root}/csvs/UCSD_PTGBM_IDH_labels_FLAIR.csv
+      UCSD-PTGBM-T1c: ${paths.data.root}/csvs/UCSD_PTGBM_IDH_labels_T1c.csv
+      RADIOMICS-UCSF-RAW: ${paths.data.root}/csvs/radiomics/UCSF-PDGM_radiomics_features.csv
+      RADIOMICS-UCSF: ${paths.data.root}/csvs/radiomics/UCSF-PDGM_radiomics_features_merged.csv
+      RADIOMICS-UPENN-RAW: ${paths.data.root}/csvs/radiomics/UPENN-GBM_radiomics_features.csv
+      RADIOMICS-UPENN: ${paths.data.root}/csvs/radiomics/UPENN-GBM_radiomics_features_merged.csv
+      RADIOMICS-ERASMUS-RAW: ${paths.data.root}/csvs/radiomics/ERASMUS-GBM_radiomics_features.csv
+      RADIOMICS-ERASMUS: ${paths.data.root}/csvs/radiomics/ERASMUS-GBM_radiomics_features_merged.csv
+      RADIOMICS-UTSW-RAW: ${paths.data.root}/csvs/radiomics/UTSW-Glioma_radiomics_features.csv
+      RADIOMICS-UTSW: ${paths.data.root}/csvs/radiomics/UTSW-Glioma_radiomics_features_merged.csv
+      RADIOMICS-UCSD-RAW: ${paths.data.root}/csvs/radiomics/UCSD-PTGBM_radiomics_features.csv
+      RADIOMICS-UCSD: ${paths.data.root}/csvs/radiomics/UCSD-PTGBM_radiomics_features_merged.csv
+  checkpoints:
+    root: checkpoints/pretrained
+    brainiac: ${paths.checkpoints.root}/brainiac/BrainIAC.ckpt
+    mricore: ${paths.checkpoints.root}/mricore/mri_foundation.pth
+    braindino: ${paths.checkpoints.root}/braindino/model.pth
+  embeddings:
+    root: embeddings
+    biomedclip: ${paths.embeddings.root}/biomedclip
+    brainiac: ${paths.embeddings.root}/brainiac
+    mricore: ${paths.embeddings.root}/mricore
+    braindino: ${paths.embeddings.root}/braindino
+  results: results/models
+  logs: logs
+  docs: docs
+  notebooks: notebooks
+  references: # Original repositories of the models, not all of them need to be cloned
+    root: reference
+    brainiac: ${paths.references.root}/BrainIAC
+
+model:
+  name: brainiac # biomedclip, brainiac, mricore
+  device: cuda
+
+datasets:
+  # id_suffix       — stripped from the patient-folder name to get the canonical id
+  # file_id_suffix  — appended after the id_suffix is stripped (e.g. UPENN
+  #                   timepoint "_11" — folder is "UPENN-GBM-00001" but files
+  #                   inside are "UPENN-GBM-00001_11_FLAIR.nii.gz")
+  # raw_tumor_seg_pattern — glob used by extract_slice_embeddings to find
+  #                         the tumor segmentation in the *raw* patient folder
+  UCSF-PDGM:
+    t1_name: T1c
+    id_suffix: _nifti
+    file_id_suffix: ""
+    label_csv: UCSF_IDH_labels.csv
+    mask_in_preprocessed: true
+    raw_tumor_seg_pattern: "*_tumor_segmentation.nii.gz"
+  UPENN-GBM:
+    t1_name: T1GD
+    id_suffix: ""
+    file_id_suffix: "_11"
+    label_csv: UPENN_IDH_labels.csv
+    mask_in_preprocessed: true
+    raw_tumor_seg_pattern: "*_automated_approx_segm.nii.gz"
+  ERASMUS-GBM:
+    t1_name: T1GD
+    id_suffix: ""
+    file_id_suffix: ""
+    label_csv: Erasmus_IDH_labels.csv
+    mask_in_preprocessed: false
+    raw_tumor_seg_pattern: "*_tumor_mask.nii.gz"
+  UTSW-Glioma:
+    t1_name: T1c
+    id_suffix: ""
+    file_id_suffix: ""
+    label_csv: UTSW_IDH_labels.csv
+    mask_in_preprocessed: true
+    raw_image_pattern:
+      FLAIR: "brain_fl_ants.nii.gz"
+      T1c: "brain_t1ce_ants.nii.gz"
+    # Prefer the manually-refined mask; fall back to FeTS.
+    raw_tumor_seg_pattern:
+      - "rtumorseg_manual_correction.nii.gz"
+      - "tumorseg_FeTS.nii.gz"
+  UCSD-PTGBM:
+    t1_name: T1c
+    id_suffix: ""
+    file_id_suffix: ""
+    label_csv: UCSD_PTGBM_IDH_labels.csv
+    mask_in_preprocessed: true
+    raw_image_pattern:
+      FLAIR: "*_FLAIR.nii.gz"
+      T1c: "*_T1post.nii.gz"
+    raw_tumor_seg_pattern: "*_BraTS_tumor_seg.nii.gz"
+
+dataset:
+  name: UCSF-PDGM # UCSF-PDGM, UPENN-GBM, ERASMUS-GBM
+  split:
+    train: 0.7
+    val: 0.15
+    test: 0.15
+
+training:
+  num_epochs: 500
+  learning_rate: 1e-4
+  lr_grid: [1e-5, 1e-4, 1e-3]
+  patience: 30
+  early_stopping: true
+  batch_size: 32
+  seeds: [0, 1, 2, 3, 4]
+  corr_threshold: 0.9  # Per-fold radiomics feature-selection correlation cutoff
