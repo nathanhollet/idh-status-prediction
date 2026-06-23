@@ -111,11 +111,14 @@ If you find our work useful, please consider to star this repository and cite ou
 
 
 ```bibtex
-@inproceedings{anonymized2026benchmark,
-  title     = {A Benchmark of (MRI-) Foundation Models to Predict IDH Mutational Status in Glioma},
-  author    = {TBD},
-  booktitle = {MICCAI},
-  year      = {2026},
+@misc{hollet2026benchmarkmrifoundationmodels,
+      title={A Benchmark of (MRI-) Foundation Models to Predict IDH Mutational Status in Glioma}, 
+      author={Nathan Hollet and Elise Robinson and Efthymios Georgiou and Ekin Ermis and Uri Nahum and Sarah Brüningk},
+      year={2026},
+      eprint={2606.23172},
+      archivePrefix={arXiv},
+      primaryClass={eess.IV},
+      url={https://arxiv.org/abs/2606.23172}, 
 }
 ```
 
