@@ -33,8 +33,8 @@ Code accompanying the paper. We benchmark four image foundation models (BrainIAC
 Requires Python 3.12 and a CUDA-capable GPU.
 
 ```bash
-git clone <repo-url> idh-mutation-prediction-release
-cd idh-mutation-prediction-release
+git clone <repo-url> idh-status-prediction
+cd idh-status-prediction
 conda env create -f environment.yml
 conda activate idh_pred_clean
 ```
