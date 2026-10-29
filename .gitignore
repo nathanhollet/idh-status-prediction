@@ -213,7 +213,6 @@ __marimo__/
 # ------------------------------------------------------------------------------
 logs/
 results/
-embeddings/
 
 # Raw cohort imaging — user downloads separately per data/README.md
 data/UCSF-PDGM/
